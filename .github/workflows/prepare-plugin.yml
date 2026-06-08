@@ -1,0 +1,34 @@
+name: Prepare and Verify Plugin
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows manually running this
+
+permissions:
+  contents: write # Gives the action permission to push the lock file back to the repo
+
+jobs:
+  build-and-prep:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' # Matches the environment needed for Dalamud API 15+
+
+    - name: Generate Lock File
+      run: dotnet restore --force-evaluate
+
+    - name: Verify Release Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Automatically Commit Lock File
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Update packages.lock.json via GitHub Actions"
+        file_pattern: '**/packages.lock.json'
